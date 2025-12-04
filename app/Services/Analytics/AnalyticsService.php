@@ -87,18 +87,18 @@ class AnalyticsService
 public function getRelatedDomains(string $keyword, array $options = []): array
 {
     $whereConditions = [];
-    $params = ['keyword' => $keyword];
+    $bindings = [];
 
     // Position filtering
     if (($options['position'] ?? 'any') === 'beginning') {
-        $whereConditions[] = "domain LIKE :keyword_pattern_start";
-        $params['keyword_pattern_start'] = $keyword . '%';
+        $whereConditions[] = "domain LIKE ?";
+        $bindings[] = $keyword . '%';
     } elseif (($options['position'] ?? 'any') === 'end') {
-        $whereConditions[] = "domain LIKE :keyword_pattern_end";
-        $params['keyword_pattern_end'] = '%' . $keyword;
+        $whereConditions[] = "domain LIKE ?";
+        $bindings[] = '%' . $keyword;
     } else {
-        $whereConditions[] = "domain LIKE :keyword_pattern_any";
-        $params['keyword_pattern_any'] = '%' . $keyword . '%';
+        $whereConditions[] = "domain LIKE ?";
+        $bindings[] = '%' . $keyword . '%';
     }
 
     // Character type filtering (includes)
@@ -127,13 +127,13 @@ public function getRelatedDomains(string $keyword, array $options = []): array
 
     // Length filtering
     if (!empty($options['minLength'] ?? '')) {
-        $whereConditions[] = "length(domain) >= :min_length";
-        $params['min_length'] = (int)$options['minLength'];
+        $whereConditions[] = "length(domain) >= ?";
+        $bindings[] = (int)$options['minLength'];
     }
 
     if (!empty($options['maxLength'] ?? '')) {
-        $whereConditions[] = "length(domain) <= :max_length";
-        $params['max_length'] = (int)$options['maxLength'];
+        $whereConditions[] = "length(domain) <= ?";
+        $bindings[] = (int)$options['maxLength'];
     }
 
     // Exclude filtering
@@ -141,8 +141,8 @@ public function getRelatedDomains(string $keyword, array $options = []): array
         $excludeTerms = array_map('trim', explode(',', $options['exclude']));
         foreach ($excludeTerms as $index => $term) {
             if (!empty($term)) {
-                $whereConditions[] = "domain NOT LIKE :exclude_term_{$index}";
-                $params["exclude_term_{$index}"] = "%{$term}%";
+                $whereConditions[] = "domain NOT LIKE ?";
+                $bindings[] = "%{$term}%";
             }
         }
     }
@@ -175,7 +175,7 @@ public function getRelatedDomains(string $keyword, array $options = []): array
         LIMIT {$limit}
     ";
 
-    return $this->client->select($query, $params)->rows();
+    return $this->client->select($query, $bindings)->rows();
 }
 
 private function filterResultsByExtensions(array $results, array $selectedExtensions): array
