@@ -87,25 +87,25 @@ class AnalyticsService
 public function getRelatedDomains(string $keyword, array $options = []): array
 {
     $whereConditions = [];
-    $params = ['keyword' => $keyword];
+    $params = [];
 
-    // Position filtering
-    if (($options['position'] ?? 'any') === 'beginning') {
-        $whereConditions[] = "domain LIKE :keyword_pattern_start";
-        $params['keyword_pattern_start'] = $keyword . '%';
-    } elseif (($options['position'] ?? 'any') === 'end') {
-        $whereConditions[] = "domain LIKE :keyword_pattern_end";
-        $params['keyword_pattern_end'] = '%' . $keyword;
+    // Build WHERE conditions with named parameters
+    $position = $options['position'] ?? 'any';
+    if ($position === 'beginning') {
+        $whereConditions[] = "domain LIKE :keyword";
+        $params['keyword'] = $keyword . '%';
+    } elseif ($position === 'end') {
+        $whereConditions[] = "domain LIKE :keyword";
+        $params['keyword'] = '%' . $keyword;
     } else {
-        $whereConditions[] = "domain LIKE :keyword_pattern_any";
-        $params['keyword_pattern_any'] = '%' . $keyword . '%';
+        $whereConditions[] = "domain LIKE :keyword";
+        $params['keyword'] = '%' . $keyword . '%';
     }
 
-    // Character type filtering (includes)
+    // Add other conditions without parameters
     $includes = $options['includes'] ?? [];
     if (!empty($includes)) {
         $charConditions = [];
-
         if (!($includes['alphabets'] ?? true)) {
             $charConditions[] = "domain NOT REGEXP '[a-zA-Z]'";
         }
@@ -116,16 +116,13 @@ public function getRelatedDomains(string $keyword, array $options = []): array
             $charConditions[] = "domain NOT LIKE '%-%'";
         }
         if (!($includes['idns'] ?? true)) {
-            // IDN filtering - domains with non-ASCII characters
             $charConditions[] = "domain REGEXP '^[a-zA-Z0-9.-]+$'";
         }
-
         if (!empty($charConditions)) {
             $whereConditions[] = "(" . implode(" AND ", $charConditions) . ")";
         }
     }
 
-    // Length filtering
     if (!empty($options['minLength'] ?? '')) {
         $whereConditions[] = "length(domain) >= :min_length";
         $params['min_length'] = (int)$options['minLength'];
@@ -136,13 +133,12 @@ public function getRelatedDomains(string $keyword, array $options = []): array
         $params['max_length'] = (int)$options['maxLength'];
     }
 
-    // Exclude filtering
     if (!empty($options['exclude'] ?? '')) {
         $excludeTerms = array_map('trim', explode(',', $options['exclude']));
         foreach ($excludeTerms as $index => $term) {
             if (!empty($term)) {
-                $whereConditions[] = "domain NOT LIKE :exclude_term_{$index}";
-                $params["exclude_term_{$index}"] = "%{$term}%";
+                $whereConditions[] = "domain NOT LIKE :exclude_{$index}";
+                $params["exclude_{$index}"] = "%{$term}%";
             }
         }
     }
@@ -150,35 +146,22 @@ public function getRelatedDomains(string $keyword, array $options = []): array
     $whereClause = !empty($whereConditions) ? implode(' AND ', $whereConditions) : "1=1";
     $limit = $options['limit'] ?? 100;
 
+    // IMPORTANT: The query must use :param_name format, not ?
     $query = "
-        WITH unique_domains AS (
-            SELECT
-                domain,
-                MAX(created_at) as latest_created_at
-            FROM domains
-            WHERE {$whereClause}
-            GROUP BY domain
-        ),
-        domain_stats AS (
-            SELECT
-                arrayElement(splitByChar('.', domain), 1) as base_keyword,
-                concat('.', arrayElement(splitByChar('.', domain), 2)) as extension
-            FROM unique_domains
-        )
         SELECT
-            base_keyword as keyword,
-            COUNT(*) as count,
-            groupUniqArray(extension) as all_extensions
-        FROM domain_stats
-        GROUP BY base_keyword
+            splitByChar('.', domain)[1] as keyword,
+            count() as count,
+            groupUniqArray(
+                '.' || splitByChar('.', domain)[2]
+            ) as all_extensions
+        FROM domains_db.domains
+        WHERE {$whereClause}
+        GROUP BY keyword
         ORDER BY count DESC
         LIMIT {$limit}
     ";
 
-    $results = $this->client->select($query, $params)->rows();
-
-    // Apply TLD filtering in PHP (since it's easier than complex SQL)
-    return $this->filterResultsByExtensions($results, $options['extensions'] ?? []);
+    return $this->client->select($query, $params)->rows();
 }
 
 private function filterResultsByExtensions(array $results, array $selectedExtensions): array
