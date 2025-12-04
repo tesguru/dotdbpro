@@ -62,9 +62,9 @@ class AnalyticsService
 //         $limit = (int) $limit;
 
 //         $query = "
-//             SELECT domain, status
+//             SELECT domain_name, status
 //             FROM domains
-//             WHERE lower(domain) LIKE lower(:keyword)
+//             WHERE lower(domain_name) LIKE lower(:keyword)
 //             LIMIT {$limit}
 //         ";
 
@@ -75,7 +75,7 @@ class AnalyticsService
 //         $domains = $result->rows();
 
 //         // Extract only the domain names
-//         $matchedDomains = array_map(fn($row) => $row['domain'], $domains);
+//         $matchedDomains = array_map(fn($row) => $row['domain_name'], $domains);
 
 //         return $matchedDomains;
 
@@ -87,18 +87,18 @@ class AnalyticsService
 public function getRelatedDomains(string $keyword, array $options = []): array
 {
     $whereConditions = [];
-    $bindings = [];
+    $params = ['keyword' => $keyword];
 
     // Position filtering
     if (($options['position'] ?? 'any') === 'beginning') {
-        $whereConditions[] = "domain LIKE ?";
-        $bindings[] = $keyword . '%';
+        $whereConditions[] = "domain LIKE :keyword_pattern_start";
+        $params['keyword_pattern_start'] = $keyword . '%';
     } elseif (($options['position'] ?? 'any') === 'end') {
-        $whereConditions[] = "domain LIKE ?";
-        $bindings[] = '%' . $keyword;
+        $whereConditions[] = "domain LIKE :keyword_pattern_end";
+        $params['keyword_pattern_end'] = '%' . $keyword;
     } else {
-        $whereConditions[] = "domain LIKE ?";
-        $bindings[] = '%' . $keyword . '%';
+        $whereConditions[] = "domain LIKE :keyword_pattern_any";
+        $params['keyword_pattern_any'] = '%' . $keyword . '%';
     }
 
     // Character type filtering (includes)
@@ -127,13 +127,13 @@ public function getRelatedDomains(string $keyword, array $options = []): array
 
     // Length filtering
     if (!empty($options['minLength'] ?? '')) {
-        $whereConditions[] = "length(domain) >= ?";
-        $bindings[] = (int)$options['minLength'];
+        $whereConditions[] = "length(domain) >= :min_length";
+        $params['min_length'] = (int)$options['minLength'];
     }
 
     if (!empty($options['maxLength'] ?? '')) {
-        $whereConditions[] = "length(domain) <= ?";
-        $bindings[] = (int)$options['maxLength'];
+        $whereConditions[] = "length(domain) <= :max_length";
+        $params['max_length'] = (int)$options['maxLength'];
     }
 
     // Exclude filtering
@@ -141,8 +141,8 @@ public function getRelatedDomains(string $keyword, array $options = []): array
         $excludeTerms = array_map('trim', explode(',', $options['exclude']));
         foreach ($excludeTerms as $index => $term) {
             if (!empty($term)) {
-                $whereConditions[] = "domain NOT LIKE ?";
-                $bindings[] = "%{$term}%";
+                $whereConditions[] = "domain NOT LIKE :exclude_term_{$index}";
+                $params["exclude_term_{$index}"] = "%{$term}%";
             }
         }
     }
@@ -175,7 +175,10 @@ public function getRelatedDomains(string $keyword, array $options = []): array
         LIMIT {$limit}
     ";
 
-    return $this->client->select($query, $bindings)->rows();
+    $results = $this->client->select($query, $params)->rows();
+
+    // Apply TLD filtering in PHP (since it's easier than complex SQL)
+    return $this->filterResultsByExtensions($results, $options['extensions'] ?? []);
 }
 
 private function filterResultsByExtensions(array $results, array $selectedExtensions): array
