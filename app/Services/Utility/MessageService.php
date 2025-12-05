@@ -12,54 +12,56 @@ use Illuminate\Support\Facades\Log;
 
 class MessageService
 {
-    public static function createOTPCode(string $emailAddress, string $purpose): void
-    {
-        $messageContent = "";
-        $otpCode = self::generateRandomToken(6);
-     if ($purpose === OtpCodePurpose::ACCOUNT_CREATION->value) {
-    $messageContent = " <p style='line-height: 30px; font-size: 16px; margin: 0;'>Welcome to <b>DN Warehouse</b>, your trusted platform for domain management and services!</p>
+   public static function createOTPCode(string $emailAddress, string $purpose): void
+{
+    $messageContent = "";
+    $otpCode = self::generateRandomToken(6);
+
+    if ($purpose === OtpCodePurpose::ACCOUNT_CREATION->value) {
+        $messageContent = " <p style='line-height: 30px; font-size: 16px; margin: 0;'>Welcome to <b>DN Warehouse</b>, your intelligent keyword research and domain discovery platform!</p>
                         </br>
-                          <p style='line-height: 30px; font-size: 16px; margin: 0;'>We are excited to have you join our community, where we provide comprehensive domain solutions
-                          and management tools for your online presence.</p></br>
+                          <p style='line-height: 30px; font-size: 16px; margin: 0;'>We're excited to have you join our community of marketers, SEO professionals, and entrepreneurs
+                          who rely on DN Warehouse for comprehensive keyword analysis and related search insights.</p></br>
                           <p style='line-height: 30px; font-size: 16px; margin: 0;'>To complete your registration, please use the OTP code below:</p>
                           <p class='bold' style='margin-top: 15px;color: #016FB9; font-weight: 700; line-height: 30px; font-size: 36px; letter-spacing: 10px; text-align: center;'>
                           {$otpCode}</p>
                            <p class='details' style='line-height: 30px; font-size: 16px; margin: 0;'>
-                            This code is valid for the next 10 minutes. Kindly complete your registration promptly.</p>
+                            This code is valid for the next 10 minutes. Please complete your registration promptly.</p>
                             <br />
                             <p style='line-height: 30px; font-size: 16px; margin: 0;'>
-                              Need help? Our support team is always available – feel free to reach out for any assistance.</p>
-                            <p style='line-height: 30px; font-size: 16px; margin: 0;'>May your domain journey be successful and rewarding.</p>";
-}elseif ($purpose === OtpCodePurpose::FORGOT_PASSWORD->value) {
-            $messageContent = " <p style='line-height: 30px; font-size: 16px; margin: 0;'>Forgot your password? Don’t worry, we’ve got you covered!</p>
-                                </br>
-                                  <p style='line-height: 30px; font-size: 16px; margin: 0;'>You recently requested to reset your password for your <b>Quran LMS</b> account.</p>
-                                  <p style='line-height: 30px; font-size: 16px; margin: 0;'>Use the token below to reset your password:</p>
-                                  <p class='bold' style='margin-top: 15px;color: #016FB9; font-weight: 700; line-height: 30px; font-size: 36px; letter-spacing: 10px; text-align: center;'>
-                                  {$otpCode}</p>
-                                   <p class='details' style='line-height: 30px; font-size: 16px; margin: 0;'>
-                                    This token is valid for the next 10 minutes. If you did not request a password reset, please ignore this message.</p>
-                                    <br />
-                                    <p style='line-height: 30px; font-size: 16px; margin: 0;'>
-                                      To reset your password, click the link below:</p>
-                                    <p style='line-height: 30px; font-size: 16px; margin: 0; text-align: center;'>
-                                      <a href='http://192.168.56.1:3000/forgot-password' style='color: #016FB9; font-weight: 700;'>Reset Password</a></p>
-                                    <br />
-                                    <p style='line-height: 30px; font-size: 16px; margin: 0;'>
-                                      Need help? Our support team is here for you – feel free to reach out if you have any questions or need assistance.</p>
-                                    <p style='line-height: 30px; font-size: 16px; margin: 0;'>May your journey of learning the Quran be fruitful and rewarding.</p>";
+                              Need help? Our support team is always available at <a href='mailto:support@dnwhouse.com' style='color: #016FB9;'>support@dnwhouse.com</a></p>
+                            <p style='line-height: 30px; font-size: 16px; margin: 0;'>Start discovering powerful keywords and grow your online presence today!</p>";
 
-        }
-        self::mailMessage($emailAddress,  $purpose, $messageContent);
-        OtpCode::create(
-            [
-                'email_address' => $emailAddress,
-                'purpose' => $purpose,
-                'code' => $otpCode,
-                'expires_at' => Carbon::now()->addMinutes(10)
-            ]
-        );
+    } elseif ($purpose === OtpCodePurpose::FORGOT_PASSWORD->value) {
+        $messageContent = " <p style='line-height: 30px; font-size: 16px; margin: 0;'>Forgot your password? Don't worry, we've got you covered!</p>
+                            </br>
+                              <p style='line-height: 30px; font-size: 16px; margin: 0;'>You recently requested to reset your password for your <b>DN Warehouse</b> account.</p>
+                              <p style='line-height: 30px; font-size: 16px; margin: 0;'>Use the verification code below to reset your password:</p>
+                              <p class='bold' style='margin-top: 15px;color: #016FB9; font-weight: 700; line-height: 30px; font-size: 36px; letter-spacing: 10px; text-align: center;'>
+                              {$otpCode}</p>
+                               <p class='details' style='line-height: 30px; font-size: 16px; margin: 0;'>
+                                This code is valid for the next 10 minutes. If you did not request a password reset, please ignore this message or contact our support team immediately.</p>
+                                <br />
+                                <p style='line-height: 30px; font-size: 16px; margin: 0;'>
+                                  To reset your password, click the link below:</p>
+                                <p style='line-height: 30px; font-size: 16px; margin: 0; text-align: center;'>
+                                  <a href='https://dnwhouse.com/forgot-password' style='color: #016FB9; font-weight: 700; text-decoration: none; padding: 10px 20px; background-color: #f0f8ff; border-radius: 5px; display: inline-block;'>Reset Password</a></p>
+                                <br />
+                                <p style='line-height: 30px; font-size: 16px; margin: 0;'>
+                                  Need assistance? Our support team is here to help – reach out at <a href='mailto:support@dnwhouse.com' style='color: #016FB9;'>support@dnwhouse.com</a></p>
+                                <p style='line-height: 30px; font-size: 16px; margin: 0;'>Continue discovering powerful keywords and growing your online presence with DN Warehouse.</p>";
     }
+
+    self::mailMessage($emailAddress, $purpose, $messageContent);
+    OtpCode::create(
+        [
+            'email_address' => $emailAddress,
+            'purpose' => $purpose,
+            'code' => $otpCode,
+            'expires_at' => Carbon::now()->addMinutes(10)
+        ]
+    );
+}
 
     public static function registrationMessage(array $data): void
     {
