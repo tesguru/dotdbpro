@@ -2,16 +2,23 @@
 
 return [
     'paths' => ['api/*', 'sanctum/csrf-cookie'],
+
     'allowed_methods' => ['*'],
+
     'allowed_origins' => [
-        'https://dnwhouse.com',          // Your main domain
-        'https://www.dnwhouse.com',      // With www prefix
-        'http://localhost:3000',         // Next.js dev server
-        'http://localhost:3001',         // Additional dev ports if needed
+        'https://dnwhouse.com',
+        'https://www.dnwhouse.com',
+        'http://localhost:3000',
+        'http://localhost:3001',
     ],
+
     'allowed_origins_patterns' => [],
+
     'allowed_headers' => ['*'],
-    'exposed_headers' => [],
-    'max_age' => 0,
-    'supports_credentials' => false,     // Keep false unless using cookies/auth
+
+    'exposed_headers' => ['Authorization'],  // Important for JWT tokens
+
+    'max_age' => 86400,  // Cache preflight for 24 hours (improves performance)
+
+    'supports_credentials' => true,  // Required for Authorization headers
 ];

@@ -17,16 +17,23 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware) {
-        //
-    })
-    ->withMiddleware(function (Middleware $middleware) {
+        // Register custom middleware aliases
         $middleware->alias([
             'api.key' => ApiKeyMiddleware::class,
-            'access_token'=>AccessTokenMiddleware::class,
-            'verify.forwarder.token'=> VerifyForwarderToken::class
+            'access_token' => AccessTokenMiddleware::class,
+            'verify.forwarder.token' => VerifyForwarderToken::class
+        ]);
+
+        // Ensure CORS middleware runs for API routes
+        $middleware->api(prepend: [
+            \Illuminate\Http\Middleware\HandleCors::class,
+        ]);
+
+        // Disable CSRF for API routes
+        $middleware->validateCsrfTokens(except: [
+            'api/*',
         ]);
     })
-
     ->withExceptions(function (Exceptions $exceptions) {
-
+        //
     })->create();
