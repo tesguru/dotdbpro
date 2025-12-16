@@ -4,7 +4,7 @@ use App\Http\Controllers\api\v1\authentication\AuthenticationController as Authe
 use Illuminate\Support\Facades\Route;
 
 
-Route::middleware(['api.key'])->controller(AuthenticationAPIController::class)->group(function () {
+Route::middleware()->controller(AuthenticationAPIController::class)->group(function () {
     Route::get('/test', 'testing');
     Route::post('/verify-email',  'verifyEmail');
     Route::post('/create-account', 'createAccount');
