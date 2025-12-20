@@ -157,7 +157,6 @@ public function checkEmail(String $email)
 
 
         $verification->delete();
-
         return $this->successResponse(statusCode: 200, message: "Verfication Sucessful");
     }
 
@@ -204,9 +203,6 @@ public function checkAuthentication(Request $request){
     {
         try {
             $data = $request->validated();
-            $reset_password_data = ['code' => $data['code'], 'purpose' => EmailVerificationPurpose::FORGOT_PASSWORD->value];
-            $verifyCode = AuthenticationService::validateOTP($reset_password_data);
-            $data['email_address'] = $verifyCode->email_address;
             AuthenticationService::updateUserPassword($data);
             return $this->successResponse(message: "Password reset successfully");
         } catch (Exception $ex) {

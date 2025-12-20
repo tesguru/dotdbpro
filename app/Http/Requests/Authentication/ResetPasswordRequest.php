@@ -22,13 +22,13 @@ class ResetPasswordRequest extends BaseRequest
      *
      * @return array<string, ValidationRule|array|string>
      */
-    public function rules(): array
-    {
-        return [
-            'code' => ['string','required',Rule::exists('otp_codes', 'code')],
-           'password' => 'required|string|min:8|confirmed'
-        ];
-    }
+   public function rules(): array
+{
+    return [
+       'email_address' => 'required|string|email|max:255|exists:user_accounts,email_address',
+       'password' => 'required|string|min:8'
+    ];
+}
 
-    
+
 }
