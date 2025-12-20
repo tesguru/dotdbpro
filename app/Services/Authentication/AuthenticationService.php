@@ -34,6 +34,11 @@ class AuthenticationService
         if (!$userData || !Hash::check($data['password'], $userData->password)) {
             throw new AuthenticationException("Invalid Email or Password");
         }
+
+        if($userData->verify_status == false){
+            MessageService::createOTPCode($data['email_address'], OtpCodePurpose::ACCOUNT_CREATION->value);
+               return $userData;
+        }
         return $userData;
     }
    public static function updateUserPassword(array $data): bool
