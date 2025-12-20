@@ -126,9 +126,19 @@ public function checkEmail(String $email)
     public function verifyEmail(Request  $request){
 
          $token = $request->input('otp');
-        $verification = OtpCode::whereCode($token)
+         $request_type = $request->input('request_type');
+
+           if( $request_type== 'create_account'){
+           $verification = OtpCode::whereCode($token)
             ->wherePurpose( OtpCodePurpose::ACCOUNT_CREATION->value)
             ->first();
+            }
+              if( $request_type == 'forgot_password'){
+              $verification = OtpCode::whereCode($token)
+            ->wherePurpose( OtpCodePurpose::FORGOT_PASSWORD->value)
+            ->first();
+            }
+
 
         if (!$verification) {
   return $this->successResponse(statusCode: 400, message: "Invalid Verification Code");
@@ -150,6 +160,8 @@ public function checkEmail(String $email)
 
         return $this->successResponse(statusCode: 200, message: "Verfication Sucessful");
     }
+
+
 public function checkAuthentication(Request $request){
     try {
     $user = $request->user();
@@ -163,8 +175,8 @@ public function checkAuthentication(Request $request){
     {
         try {
             $data = $request->validated();
-            MessageService::createVerificationLink($data['email_address'], EmailVerificationPurpose::FORGOT_PASSWORD->value);
-           return $this->successResponse(statusCode: 200, message: "Reset Password Link Sent");
+     MessageService::createOTPCode($data['email_address'], OtpCodePurpose::FORGOT_PASSWORD->value);
+           return $this->successResponse(statusCode: 200, message: "Otp Send Successfully");
         } catch (Exception $ex) {
             return $this->errorResponse(500, $ex->getMessage());
         }
@@ -178,7 +190,7 @@ public function checkAuthentication(Request $request){
             MessageService::createOTPCode($data['email_address'], OtpCodePurpose::ACCOUNT_CREATION->value);
             }
               if($data['request_type'] == 'forgot_password'){
-            MessageService::createOTPCode($data['email_address'], OtpCodePurpose::ACCOUNT_CREATION->value);
+            MessageService::createOTPCode($data['email_address'], OtpCodePurpose::FORGOT_PASSWORD->value);
             }
 
            return $this->successResponse(statusCode: 200, message: "Otp Send sucessfully");

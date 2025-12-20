@@ -12,7 +12,7 @@ use Illuminate\Support\Facades\Log;
 
 class MessageService
 {
-   public static function createOTPCode(string $emailAddress, string $purpose): void
+public static function createOTPCode(string $emailAddress, string $purpose): void
 {
     $messageContent = "";
     $otpCode = self::generateRandomToken(6);
@@ -22,11 +22,11 @@ class MessageService
                         </br>
                           <p style='line-height: 30px; font-size: 16px; margin: 0;'>We're excited to have you join our community of marketers, SEO professionals, and entrepreneurs
                           who rely on DN Warehouse for comprehensive keyword analysis and related search insights.</p></br>
-                          <p style='line-height: 30px; font-size: 16px; margin: 0;'>To complete your registration, please use the OTP code below:</p>
+                          <p style='line-height: 30px; font-size: 16px; margin: 0;'><b>Your One-Time Password (OTP) for account verification:</b></p>
                           <p class='bold' style='margin-top: 15px;color: #016FB9; font-weight: 700; line-height: 30px; font-size: 36px; letter-spacing: 10px; text-align: center;'>
                           {$otpCode}</p>
-                           <p class='details' style='line-height: 30px; font-size: 16px; margin: 0;'>
-                            This code is valid for the next 10 minutes. Please complete your registration promptly.</p>
+                           <p class='details' style='line-height: 30px; font-size: 16px; margin: 0; text-align: center;'>
+                            <b>This OTP code expires in 10 minutes.</b> Please complete your registration promptly.</p>
                             <br />
                             <p style='line-height: 30px; font-size: 16px; margin: 0;'>
                               Need help? Our support team is always available at <a href='mailto:support@dnwhouse.com' style='color: #016FB9;'>support@dnwhouse.com</a></p>
@@ -36,16 +36,16 @@ class MessageService
         $messageContent = " <p style='line-height: 30px; font-size: 16px; margin: 0;'>Forgot your password? Don't worry, we've got you covered!</p>
                             </br>
                               <p style='line-height: 30px; font-size: 16px; margin: 0;'>You recently requested to reset your password for your <b>DN Warehouse</b> account.</p>
-                              <p style='line-height: 30px; font-size: 16px; margin: 0;'>Use the verification code below to reset your password:</p>
+                              <p style='line-height: 30px; font-size: 16px; margin: 0;'><b>Your One-Time Password (OTP) for password reset:</b></p>
                               <p class='bold' style='margin-top: 15px;color: #016FB9; font-weight: 700; line-height: 30px; font-size: 36px; letter-spacing: 10px; text-align: center;'>
                               {$otpCode}</p>
-                               <p class='details' style='line-height: 30px; font-size: 16px; margin: 0;'>
-                                This code is valid for the next 10 minutes. If you did not request a password reset, please ignore this message or contact our support team immediately.</p>
+                               <p class='details' style='line-height: 30px; font-size: 16px; margin: 0; text-align: center;'>
+                                <b>This OTP code expires in 10 minutes.</b> If you did not request a password reset, please ignore this message or contact our support team immediately.</p>
                                 <br />
                                 <p style='line-height: 30px; font-size: 16px; margin: 0;'>
-                                  To reset your password, click the link below:</p>
+                                  To reset your password, enter the OTP code on the verification page or click the link below:</p>
                                 <p style='line-height: 30px; font-size: 16px; margin: 0; text-align: center;'>
-                                  <a href='https://dnwhouse.com/forgot-password' style='color: #016FB9; font-weight: 700; text-decoration: none; padding: 10px 20px; background-color: #f0f8ff; border-radius: 5px; display: inline-block;'>Reset Password</a></p>
+                                  <a href='https://dnwhouse.com/reset-password' style='color: #016FB9; font-weight: 700; text-decoration: none; padding: 10px 20px; background-color: #f0f8ff; border-radius: 5px; display: inline-block;'>Reset Password</a></p>
                                 <br />
                                 <p style='line-height: 30px; font-size: 16px; margin: 0;'>
                                   Need assistance? Our support team is here to help – reach out at <a href='mailto:support@dnwhouse.com' style='color: #016FB9;'>support@dnwhouse.com</a></p>
@@ -63,7 +63,7 @@ class MessageService
     );
 }
 
-    public static function registrationMessage(array $data): void
+     public static function registrationMessage(array $data): void
     {
         $messageContent = " <p style='line-height: 30px; font-size: 16px; margin: 0;'>Welcome to <b>QuranLynk</b>! We are delighted to have you join our learning community.</p>
                     <br>
