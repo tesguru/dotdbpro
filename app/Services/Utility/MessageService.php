@@ -43,11 +43,7 @@ class MessageService
                                <p class='details' style='line-height: 30px; font-size: 16px; margin: 0; text-align: center;'>
                                 <b>This OTP code expires in 10 minutes.</b> If you did not request a password reset, please ignore this message or contact our support team immediately.</p>
                                 <br />
-                                <p style='line-height: 30px; font-size: 16px; margin: 0;'>
-                                  To reset your password, enter the OTP code on the verification page or click the link below:</p>
-                                <p style='line-height: 30px; font-size: 16px; margin: 0; text-align: center;'>
-                                  <a href='https://dnwhouse.com/reset-password' style='color: #016FB9; font-weight: 700; text-decoration: none; padding: 10px 20px; background-color: #f0f8ff; border-radius: 5px; display: inline-block;'>Reset Password</a></p>
-                                <br />
+                
                                 <p style='line-height: 30px; font-size: 16px; margin: 0;'>
                                   Need assistance? Our support team is here to help – reach out at <a href='mailto:support@dnwhouse.com' style='color: #016FB9;'>support@dnwhouse.com</a></p>
                                 <p style='line-height: 30px; font-size: 16px; margin: 0;'>Continue discovering powerful keywords and growing your online presence with Dnwhouse.</p>";
