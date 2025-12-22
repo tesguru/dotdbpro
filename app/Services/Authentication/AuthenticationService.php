@@ -10,6 +10,7 @@ use Carbon\Carbon;
 use Exception;
 use Illuminate\Auth\AuthenticationException;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Cache;
 
 class AuthenticationService
 {
@@ -47,11 +48,7 @@ class AuthenticationService
         // Clear IP-based search limit
         self::clearAnonymousSearchLimit();
 
-         [
-            'user' => $userData,
-            'verified' => true,
-            'user_id' => $userData->id // Return user ID for client to send in requests
-        ];
+         return $userData;
     }
 
     private static function clearAnonymousSearchLimit()
