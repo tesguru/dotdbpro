@@ -10,7 +10,7 @@
         "firebase/php-jwt": "^6.11",
         "io-developer/php-whois": "^4.1",
         "laravel/framework": "^11.31",
-        "laravel/sanctum": "^4.0",
+        "laravel/sanctum": "^4.2",
         "laravel/socialite": "^5.20",
         "laravel/tinker": "^2.9",
         "resend/resend-laravel": "^1.1",

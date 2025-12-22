@@ -31,16 +31,41 @@ class AuthenticationService
     public static function loginUser(array $data)
     {
         $userData = UserAccount::whereEmailAddress($data['email_address'])->first();
+
         if (!$userData || !Hash::check($data['password'], $userData->password)) {
             throw new AuthenticationException("Invalid Email or Password");
         }
 
         if($userData->verify_status == false){
             MessageService::createOTPCode($data['email_address'], OtpCodePurpose::ACCOUNT_CREATION->value);
-               return $userData;
+            return [
+                'user' => $userData,
+                'verified' => false
+            ];
         }
-        return $userData;
+
+        // Clear IP-based search limit
+        self::clearAnonymousSearchLimit();
+
+         [
+            'user' => $userData,
+            'verified' => true,
+            'user_id' => $userData->id // Return user ID for client to send in requests
+        ];
     }
+
+    private static function clearAnonymousSearchLimit()
+    {
+        $request = request();
+        if (!$request) return;
+
+        $ipAddress = $request->ip();
+        $identifier = md5($ipAddress);
+        $cacheKey = "search_limit_{$identifier}";
+
+        Cache::forget($cacheKey);
+    }
+
    public static function updateUserPassword(array $data): bool
     {
         return UserAccount::whereEmailAddress($data['email_address'])->update(['password' => Hash::make($data['password'])]);

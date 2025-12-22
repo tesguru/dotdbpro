@@ -4,6 +4,7 @@ use Illuminate\Foundation\Application;
 use App\Http\Middleware\AdminMiddleware;
 use App\Http\Middleware\ApiKeyMiddleware;
 use App\Http\Middleware\AccessTokenMiddleware;
+use App\Http\Middleware\DailySearchLimit;
 use App\Http\Middleware\VerifyForwarderToken;
 use App\Http\Middleware\ParentMiddleware;
 use Illuminate\Foundation\Configuration\Exceptions;
@@ -21,6 +22,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->alias([
             'api.key' => ApiKeyMiddleware::class,
             'access_token' => AccessTokenMiddleware::class,
+              'daily_search_limit' => DailySearchLimit::class,
             'verify.forwarder.token' => VerifyForwarderToken::class
         ]);
 

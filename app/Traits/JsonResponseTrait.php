@@ -26,14 +26,19 @@ trait JsonResponseTrait
         return response()->json($response, $statusCode);
     }
 
-    public function errorResponse($statusCode = Response::HTTP_BAD_REQUEST, $message = 'Error'): JsonResponse
+    // Updated to include $data parameter
+    public function errorResponse($statusCode = Response::HTTP_BAD_REQUEST, $message = 'Error', $data = null): JsonResponse
     {
-        return response()->json(
-            [
-                'statusCode' => $statusCode,
-                'message' => $message,
-            ],
-            $statusCode
-        );
+        $response = [
+            'statusCode' => $statusCode,
+            'message' => $message,
+        ];
+
+        // Only add data if it's not null
+        if ($data !== null) {
+            $response['data'] = $data;
+        }
+
+        return response()->json($response, $statusCode);
     }
 }
