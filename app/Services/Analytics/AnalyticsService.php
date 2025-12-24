@@ -107,16 +107,16 @@ public function getRelatedDomains(string $keyword, array $options = []): array
     if (!empty($includes)) {
         $charConditions = [];
         if (!($includes['alphabets'] ?? true)) {
-            $charConditions[] = "domain NOT REGEXP '[a-zA-Z]'";
+            $charConditions[] = "NOT match(domain, '[a-zA-Z]')";
         }
         if (!($includes['digits'] ?? true)) {
-            $charConditions[] = "domain NOT REGEXP '[0-9]'";
+            $charConditions[] = "NOT match(domain, '[0-9]')";
         }
         if (!($includes['hyphens'] ?? true)) {
             $charConditions[] = "domain NOT LIKE '%-%'";
         }
         if (!($includes['idns'] ?? true)) {
-            $charConditions[] = "domain REGEXP '^[a-zA-Z0-9.-]+$'";
+            $charConditions[] = "match(domain, '^[a-zA-Z0-9.-]+$')";
         }
         if (!empty($charConditions)) {
             $whereConditions[] = "(" . implode(" AND ", $charConditions) . ")";
