@@ -10,7 +10,7 @@ use Symfony\Component\HttpFoundation\Response;
 
 class DailySearchLimit
 {
-    use JsonResponseTrait; // Add this line
+    use JsonResponseTrait;
 
     public function handle(Request $request, Closure $next): Response
     {
@@ -23,7 +23,7 @@ class DailySearchLimit
         }
 
         // Anonymous user - apply IP-based limit
-        $ipAddress = $this->getClientIp($request);
+        $ipAddress = self::getClientIp($request); // Make it static
         $identifier = md5($ipAddress);
         $cacheKey = "search_limit_{$identifier}";
         $today = now()->toDateString();
@@ -42,13 +42,11 @@ class DailySearchLimit
             ];
         }
 
-        // Fixed: Check for >= 5 (not 8)
         if ($searchData['count'] >= 5) {
-            // Use the updated errorResponse method with data
             return $this->errorResponse(
                 429,
                 'You have reached your daily search limit of 5 searches. Please login to continue.',
-                [ // This is the data parameter
+                [
                     'limit_reached' => true,
                     'searches_remaining' => 0,
                     'reset_time' => now()->endOfDay()->format('Y-m-d H:i:s')
@@ -72,9 +70,9 @@ class DailySearchLimit
         return $response;
     }
 
-    private function getClientIp(Request $request): string
+    // Make this static so it can be called from UserService
+    public static function getClientIp(Request $request): string
     {
-        // ... keep your existing getClientIp method ...
         $headers = [
             'HTTP_CF_CONNECTING_IP',
             'HTTP_X_REAL_IP',

@@ -29,39 +29,40 @@ class AuthenticationService
         MessageService::createOTPCode($data['email_address'], OtpCodePurpose::ACCOUNT_CREATION->value);
          return $customer;
     }
-    public static function loginUser(array $data)
-    {
-        $userData = UserAccount::whereEmailAddress($data['email_address'])->first();
+public static function loginUser(array $data)
+{
+    $userData = UserAccount::whereEmailAddress($data['email_address'])->first();
 
-        if (!$userData || !Hash::check($data['password'], $userData->password)) {
-            throw new AuthenticationException("Invalid Email or Password");
-        }
-
-        if($userData->verify_status == false){
-            MessageService::createOTPCode($data['email_address'], OtpCodePurpose::ACCOUNT_CREATION->value);
-            return [
-                'user' => $userData,
-                'verified' => false
-            ];
-        }
-
-        // Clear IP-based search limit
-        self::clearAnonymousSearchLimit();
-
-         return $userData;
+    if (!$userData || !Hash::check($data['password'], $userData->password)) {
+        throw new AuthenticationException("Invalid Email or Password");
     }
 
-    private static function clearAnonymousSearchLimit()
-    {
-        $request = request();
-        if (!$request) return;
-
-        $ipAddress = $request->ip();
-        $identifier = md5($ipAddress);
-        $cacheKey = "search_limit_{$identifier}";
-
-        Cache::forget($cacheKey);
+    if($userData->verify_status == false){
+        MessageService::createOTPCode($data['email_address'], OtpCodePurpose::ACCOUNT_CREATION->value);
+        return [
+            'user' => $userData,
+            'verified' => false
+        ];
     }
+
+    // Clear IP-based search limit using the same method as middleware
+    self::clearAnonymousSearchLimit();
+
+    return $userData;
+}
+
+private static function clearAnonymousSearchLimit()
+{
+    $request = request();
+    if (!$request) return;
+
+  
+    $ipAddress = DailySearchLimit::getClientIp($request);
+    $identifier = md5($ipAddress);
+    $cacheKey = "search_limit_{$identifier}";
+
+    Cache::forget($cacheKey);
+}
 
    public static function updateUserPassword(array $data): bool
     {

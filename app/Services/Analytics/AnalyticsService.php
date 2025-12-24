@@ -175,7 +175,7 @@ private function filterResultsByExtensions(array $results, array $selectedExtens
         $matchingExtensions = array_intersect($result['all_extensions'], $selectedExtensions);
         return !empty($matchingExtensions);
     });
-}
+} 
 
 
  public function analyzeDomain(string $domain): array
