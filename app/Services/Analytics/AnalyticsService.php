@@ -178,11 +178,22 @@ private function filterResultsByExtensions(array $results, array $selectedExtens
         return $results;
     }
 
-    return array_filter($results, function($result) use ($selectedExtensions) {
+    // Ensure all extensions are arrays and normalized
+    return array_values(array_filter($results, function($result) use ($selectedExtensions) {
+        // Make sure all_extensions exists and is an array
+        if (!isset($result['all_extensions']) || !is_array($result['all_extensions'])) {
+            return false;
+        }
+
+        // Normalize both arrays (trim whitespace, ensure consistent format)
+        $resultExtensions = array_map('trim', $result['all_extensions']);
+        $selectedExtensions = array_map('trim', $selectedExtensions);
+
         // Check if the keyword has AT LEAST ONE of the selected extensions
-        $matchingExtensions = array_intersect($result['all_extensions'], $selectedExtensions);
+        $matchingExtensions = array_intersect($resultExtensions, $selectedExtensions);
+
         return !empty($matchingExtensions);
-    });
+    }));
 }
 
 
