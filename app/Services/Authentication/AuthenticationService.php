@@ -11,6 +11,7 @@ use Exception;
 use Illuminate\Auth\AuthenticationException;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Cache;
+use App\Http\Middleware\DailySearchLimit;
 
 class AuthenticationService
 {
@@ -56,7 +57,7 @@ private static function clearAnonymousSearchLimit()
     $request = request();
     if (!$request) return;
 
-  
+
     $ipAddress = DailySearchLimit::getClientIp($request);
     $identifier = md5($ipAddress);
     $cacheKey = "search_limit_{$identifier}";
