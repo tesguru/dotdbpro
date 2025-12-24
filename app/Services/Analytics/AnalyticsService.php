@@ -123,13 +123,14 @@ public function getRelatedDomains(string $keyword, array $options = []): array
         }
     }
 
+    // Fixed: Check length of keyword part only (before the first dot)
     if (!empty($options['minLength'] ?? '')) {
-        $whereConditions[] = "length(domain) >= :min_length";
+        $whereConditions[] = "length(splitByChar('.', domain)[1]) >= :min_length";
         $params['min_length'] = (int)$options['minLength'];
     }
 
     if (!empty($options['maxLength'] ?? '')) {
-        $whereConditions[] = "length(domain) <= :max_length";
+        $whereConditions[] = "length(splitByChar('.', domain)[1]) <= :max_length";
         $params['max_length'] = (int)$options['maxLength'];
     }
 
@@ -161,7 +162,15 @@ public function getRelatedDomains(string $keyword, array $options = []): array
         LIMIT {$limit}
     ";
 
-    return $this->client->select($query, $params)->rows();
+    $results = $this->client->select($query, $params)->rows();
+
+    // Apply extension filtering if specified
+    $selectedExtensions = $options['extensions'] ?? [];
+    if (!empty($selectedExtensions)) {
+        $results = $this->filterResultsByExtensions($results, $selectedExtensions);
+    }
+
+    return $results;
 }
 
 private function filterResultsByExtensions(array $results, array $selectedExtensions): array
@@ -175,7 +184,7 @@ private function filterResultsByExtensions(array $results, array $selectedExtens
         $matchingExtensions = array_intersect($result['all_extensions'], $selectedExtensions);
         return !empty($matchingExtensions);
     });
-} 
+}
 
 
  public function analyzeDomain(string $domain): array
