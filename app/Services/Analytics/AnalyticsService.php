@@ -123,7 +123,7 @@ public function getRelatedDomains(string $keyword, array $options = []): array
         }
     }
 
-    // Fixed: Check length of keyword part only (before the first dot)
+    // Check length of keyword part only (before the first dot)
     if (!empty($options['minLength'] ?? '')) {
         $whereConditions[] = "length(splitByChar('.', domain)[1]) >= :min_length";
         $params['min_length'] = (int)$options['minLength'];
@@ -147,7 +147,6 @@ public function getRelatedDomains(string $keyword, array $options = []): array
     $whereClause = !empty($whereConditions) ? implode(' AND ', $whereConditions) : "1=1";
     $limit = $options['limit'] ?? 100;
 
-    // IMPORTANT: The query must use :param_name format, not ?
     $query = "
         SELECT
             splitByChar('.', domain)[1] as keyword,
@@ -180,7 +179,7 @@ private function filterResultsByExtensions(array $results, array $selectedExtens
     }
 
     return array_filter($results, function($result) use ($selectedExtensions) {
-        // Check if any of the result's extensions match the selected ones
+        // Check if the keyword has AT LEAST ONE of the selected extensions
         $matchingExtensions = array_intersect($result['all_extensions'], $selectedExtensions);
         return !empty($matchingExtensions);
     });
