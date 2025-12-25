@@ -13,7 +13,7 @@ return new class extends Migration
     {
         Schema::create('keywords', function (Blueprint $table) {
             $table->id();
-            $table->string('keyword')->unique(); // Store only the keyword
+            $table->string('keyword');
             $table->timestamps();
 
             // Add index for faster searches
