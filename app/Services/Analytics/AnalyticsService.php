@@ -6,6 +6,7 @@ use ClickHouseDB\Client;
 use Exception;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Cache;
+
 class AnalyticsService
 {
     protected Client $client;
@@ -178,7 +179,7 @@ private function filterResultsByExtensions(array $results, array $selectedExtens
         return $results;
     }
 
-   
+
     return array_values(array_filter($results, function($result) use ($selectedExtensions) {
 
         if (!isset($result['all_extensions']) || !is_array($result['all_extensions'])) {
