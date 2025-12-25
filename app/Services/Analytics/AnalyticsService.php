@@ -103,7 +103,10 @@ public function getRelatedDomains(string $keyword, array $options = []): array
         $params['keyword'] = '%' . $keyword . '%';
     }
 
-    // Add other conditions without parameters
+    // Ensure domain has at least one dot (valid domain format)
+    $whereConditions[] = "position(domain, '.') > 0";
+
+    // Character type filtering
     $includes = $options['includes'] ?? [];
     if (!empty($includes)) {
         $charConditions = [];
@@ -124,17 +127,18 @@ public function getRelatedDomains(string $keyword, array $options = []): array
         }
     }
 
-    // Check length of keyword part only (before the first dot)
+    // Length filtering (keyword part only, before first dot)
     if (!empty($options['minLength'] ?? '')) {
-        $whereConditions[] = "length(splitByChar('.', domain)[1]) >= :min_length";
+        $whereConditions[] = "length(substring(domain, 1, position(domain, '.') - 1)) >= :min_length";
         $params['min_length'] = (int)$options['minLength'];
     }
 
     if (!empty($options['maxLength'] ?? '')) {
-        $whereConditions[] = "length(splitByChar('.', domain)[1]) <= :max_length";
+        $whereConditions[] = "length(substring(domain, 1, position(domain, '.') - 1)) <= :max_length";
         $params['max_length'] = (int)$options['maxLength'];
     }
 
+    // Exclude terms
     if (!empty($options['exclude'] ?? '')) {
         $excludeTerms = array_map('trim', explode(',', $options['exclude']));
         foreach ($excludeTerms as $index => $term) {
@@ -145,15 +149,16 @@ public function getRelatedDomains(string $keyword, array $options = []): array
         }
     }
 
-    $whereClause = !empty($whereConditions) ? implode(' AND ', $whereConditions) : "1=1";
-    $limit = $options['limit'] ?? 100;
+    $whereClause = implode(' AND ', $whereConditions);
+    $limit = (int)($options['limit'] ?? 100);
 
+    // Query with proper extension extraction and counting
     $query = "
         SELECT
-            splitByChar('.', domain)[1] as keyword,
-            count() as count,
+            substring(domain, 1, position(domain, '.') - 1) as keyword,
+            uniq(substring(domain, position(domain, '.'))) as count,
             groupUniqArray(
-                '.' || splitByChar('.', domain)[2]
+                substring(domain, position(domain, '.'))
             ) as all_extensions
         FROM domains_db.domains
         WHERE {$whereClause}
@@ -179,15 +184,19 @@ private function filterResultsByExtensions(array $results, array $selectedExtens
         return $results;
     }
 
+    // Normalize extensions - ensure they all start with a dot
+    $normalizedExtensions = array_map(function($ext) {
+        $ext = trim($ext);
+        return (strpos($ext, '.') === 0) ? $ext : '.' . $ext;
+    }, $selectedExtensions);
 
-    return array_values(array_filter($results, function($result) use ($selectedExtensions) {
-
+    return array_values(array_filter($results, function($result) use ($normalizedExtensions) {
         if (!isset($result['all_extensions']) || !is_array($result['all_extensions'])) {
             return false;
         }
-        $resultExtensions = array_map('trim', $result['all_extensions']);
-        $selectedExtensions = array_map('trim', $selectedExtensions);
-        $matchingExtensions = array_intersect($resultExtensions, $selectedExtensions);
+
+        // Check if any of the selected extensions exist in the result
+        $matchingExtensions = array_intersect($result['all_extensions'], $normalizedExtensions);
 
         return !empty($matchingExtensions);
     }));
