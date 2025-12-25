@@ -1,11 +1,12 @@
 <?php
+
 namespace App\Http\Middleware;
 
 use App\Traits\JsonResponseTrait;
+use App\Models\DailySearch;
 use Closure;
-use App\Models\UserAccount;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Log;
 use Symfony\Component\HttpFoundation\Response;
 
 class DailySearchLimit
@@ -14,35 +15,40 @@ class DailySearchLimit
 
     public function handle(Request $request, Closure $next): Response
     {
-        // Check if user_id is provided in request (simple auth check)
-        $userId = $request->header('X-User-Id') ?? $request->input('user_id');
-
-        if ($userId && UserAccount::find($userId)) {
-            // Valid user - unlimited searches
-            return $next($request);
+        // Check if user is authenticated via Sanctum
+        if ($user = $request->user()) {
+            Log::info('Authenticated user access', [
+                'user_id' => $user->id,
+                'route' => $request->route()->getName()
+            ]);
+            return $next($request); // Unlimited access for authenticated users
         }
 
         // Anonymous user - apply IP-based limit
-        $ipAddress = self::getClientIp($request); // Make it static
-        $identifier = md5($ipAddress);
-        $cacheKey = "search_limit_{$identifier}";
+        $ipAddress = self::getClientIp($request);
         $today = now()->toDateString();
 
-        $searchData = Cache::get($cacheKey, [
-            'count' => 0,
-            'date' => $today,
-            'ip' => $ipAddress
+        Log::info('Anonymous user access', [
+            'ip' => $ipAddress,
+            'today' => $today,
+            'route' => $request->route()->getName()
         ]);
 
-        if ($searchData['date'] !== $today) {
-            $searchData = [
-                'count' => 0,
+        // Use database for tracking
+        $searchRecord = DailySearch::firstOrCreate(
+            [
+                'ip_address' => $ipAddress,
                 'date' => $today,
-                'ip' => $ipAddress
-            ];
-        }
+            ],
+            ['count' => 0]
+        );
 
-        if ($searchData['count'] >= 5) {
+        if ($searchRecord->count >= 5) {
+            Log::warning('Daily search limit reached', [
+                'ip' => $ipAddress,
+                'count' => $searchRecord->count
+            ]);
+
             return $this->errorResponse(
                 429,
                 'You have reached your daily search limit of 5 searches. Please login to continue.',
@@ -54,38 +60,49 @@ class DailySearchLimit
             );
         }
 
-        $searchData['count']++;
-        $minutesUntilMidnight = now()->diffInMinutes(now()->endOfDay());
-        Cache::put($cacheKey, $searchData, now()->addMinutes($minutesUntilMidnight));
+        // Increment count
+        $searchRecord->increment('count');
+        $updatedCount = $searchRecord->fresh()->count;
 
         $response = $next($request);
 
+        // Add search info to response
         if ($response instanceof \Illuminate\Http\JsonResponse) {
             $data = $response->getData(true);
-            $data['searches_remaining'] = 5 - $searchData['count'];
-            $data['searches_used'] = $searchData['count'];
+            $data['searches_remaining'] = 5 - $updatedCount;
+            $data['searches_used'] = $updatedCount;
             $response->setData($data);
         }
 
         return $response;
-
     }
 
-  public static function clearSearchLimit(Request $request = null)
-{
-    if (!$request) {
-        $request = request();
-        if (!$request) return;
+    public static function clearSearchLimit(Request $request = null)
+    {
+        if (!$request) {
+            $request = request();
+            if (!$request) return;
+        }
+
+        $ipAddress = self::getClientIp($request);
+        $today = now()->toDateString();
+
+        Log::info('Clearing search limit', [
+            'ip' => $ipAddress,
+            'today' => $today
+        ]);
+
+        // Delete from database
+        DailySearch::where('ip_address', $ipAddress)
+                   ->where('date', $today)
+                   ->delete();
+
+        // Also clear any cache entries
+        $identifier = md5($ipAddress);
+        $cacheKey = "search_limit_{$identifier}";
+        \Illuminate\Support\Facades\Cache::forget($cacheKey);
     }
 
-    $ipAddress = self::getClientIp($request);
-    $identifier = md5($ipAddress);
-    $cacheKey = "search_limit_{$identifier}";
-
-    Cache::forget($cacheKey);
-}
-
-    // Make this static so it can be called from UserService
     public static function getClientIp(Request $request): string
     {
         $headers = [

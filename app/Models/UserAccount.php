@@ -9,7 +9,8 @@ use Illuminate\Support\Str;
 
 class UserAccount extends Model
 {
-    use HasFactory, SoftDeletes;
+      use HasApiTokens, HasFactory, Notifiable, SoftDeletes;
+
 
     protected $table = 'user_accounts';
 

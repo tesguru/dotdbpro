@@ -46,7 +46,9 @@ public static function loginUser(array $data)
         ];
     }
 
-     DailySearchLimit::clearSearchLimit(request());
+    DailySearchLimit::clearSearchLimit($request);
+
+        $token = $user->createToken('auth-token')->plainTextToken;
     return $userData;
 }
 
