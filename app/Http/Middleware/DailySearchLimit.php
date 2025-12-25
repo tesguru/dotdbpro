@@ -68,7 +68,22 @@ class DailySearchLimit
         }
 
         return $response;
+
     }
+
+  public static function clearSearchLimit(Request $request = null)
+{
+    if (!$request) {
+        $request = request();
+        if (!$request) return;
+    }
+
+    $ipAddress = self::getClientIp($request);
+    $identifier = md5($ipAddress);
+    $cacheKey = "search_limit_{$identifier}";
+
+    Cache::forget($cacheKey);
+}
 
     // Make this static so it can be called from UserService
     public static function getClientIp(Request $request): string

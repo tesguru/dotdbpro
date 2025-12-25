@@ -46,24 +46,10 @@ public static function loginUser(array $data)
         ];
     }
 
-    // Clear IP-based search limit using the same method as middleware
-    self::clearAnonymousSearchLimit();
-
+     DailySearchLimit::clearSearchLimit(request());
     return $userData;
 }
 
-private static function clearAnonymousSearchLimit()
-{
-    $request = request();
-    if (!$request) return;
-
-
-    $ipAddress = DailySearchLimit::getClientIp($request);
-    $identifier = md5($ipAddress);
-    $cacheKey = "search_limit_{$identifier}";
-
-    Cache::forget($cacheKey);
-}
 
    public static function updateUserPassword(array $data): bool
     {
