@@ -6,7 +6,6 @@ use App\Http\Controllers\Controller;
 use App\Traits\JsonResponseTrait;
 use App\Services\Analytics\AnalyticsService;
 use Illuminate\Http\Request;
-use App\Models\Keyword;
 use Exception;
 
 class AnalyticsController extends Controller{
@@ -44,11 +43,10 @@ try {
 public function getRelatedKeywords(Request $request)
 {
     try {
-       $keywordValue = $request->input('keyword', 'tech');
-$keywordModel = Keyword::create(['keyword' => $keywordValue]);
+        $keyword = $request->input('keyword', 'tech');
         $filters = $request->input('filters', []);
 
-        $related = $this->analytics->getRelatedDomains($keywordValue, $filters);
+        $related = $this->analytics->getRelatedDomains($keyword, $filters);
         return $this->successDataResponse(data: $related);
     } catch (Exception $ex) {
         return $this->errorResponse(message: $ex->getMessage());
@@ -73,5 +71,3 @@ try {
 }
 
 }
-
-

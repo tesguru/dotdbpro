@@ -4,9 +4,10 @@ use Illuminate\Foundation\Application;
 use App\Http\Middleware\AdminMiddleware;
 use App\Http\Middleware\ApiKeyMiddleware;
 use App\Http\Middleware\AccessTokenMiddleware;
-use App\Http\Middleware\DailySearchLimit;
+use App\Http\Middleware\CheckSearchLimit;
 use App\Http\Middleware\VerifyForwarderToken;
 use App\Http\Middleware\ParentMiddleware;
+use App\Http\Middleware\HandleInertiaRequests; // 👈 Add this
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
 
@@ -22,11 +23,16 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->alias([
             'api.key' => ApiKeyMiddleware::class,
             'access_token' => AccessTokenMiddleware::class,
-              'daily_search_limit' => DailySearchLimit::class,
+            'daily_search_limit' => CheckSearchLimit::class,
             'verify.forwarder.token' => VerifyForwarderToken::class
         ]);
 
-        // Ensure CORS middleware runs for API routes
+     
+        $middleware->web(append: [
+            HandleInertiaRequests::class,
+        ]);
+
+
         $middleware->api(prepend: [
             \Illuminate\Http\Middleware\HandleCors::class,
         ]);
