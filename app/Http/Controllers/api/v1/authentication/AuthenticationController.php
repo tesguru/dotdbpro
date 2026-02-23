@@ -244,97 +244,98 @@ return redirect()->to($frontendUrl . '/auth/callback?' . http_build_query([
 }
 
 
-public function handle(Request $request)
-{
-    $data = $request->all();
-    Log::info('Dodo webhook received', $data);
 
-    $payload = $data['data'] ?? [];
-
-    DB::beginTransaction();
-
-    try {
-        // === Subscription events ===
-        if (($payload['payload_type'] ?? null) === 'Subscription') {
-            switch ($data['type']) {
-                case 'subscription.active':
-                case 'subscription.renewed':
-                    Subscription::updateOrCreate(
-                        ['subscription_id' => $payload['subscription_id']],
-                        [
-                            'user_id' => UserAccount::where('email_address', $payload['customer']['email'] ?? null)->value('user_id'),
-                            'status' => $payload['status'] ?? 'active',
-                            'product_id' => $payload['product_id'] ?? null,
-                            'currency' => $payload['currency'] ?? null,
-                            'amount' => $payload['recurring_pre_tax_amount'] ?? null,
-                            'payment_frequency_count' => $payload['payment_frequency_count'] ?? null,
-                            'payment_frequency_interval' => $payload['payment_frequency_interval'] ?? null,
-                            'subscription_period_count' => $payload['subscription_period_count'] ?? null,
-                            'subscription_period_interval' => $payload['subscription_period_interval'] ?? null,
-                            'next_billing_date' => $payload['next_billing_date'] ?? null,
-                            'previous_billing_date' => $payload['previous_billing_date'] ?? null,
-                            'expires_at' => $payload['expires_at'] ?? null,
-                            'raw_payload' => json_encode($payload), // ensure JSON storage
-                        ]
-                    );
-                    Log::info('Subscription saved', $payload);
-                    break;
-
-                case 'subscription.cancelled':
-                    Subscription::where('subscription_id', $payload['subscription_id'])
-                        ->update([
-                            'status' => 'cancelled',
-                            'raw_payload' => json_encode($payload),
-                        ]);
-                    Log::info('Subscription cancelled', $payload);
-                    break;
-            }
-        }
-
-        // === Payment events ===
-        if (($payload['payload_type'] ?? null) === 'Payment') {
-            if ($data['type'] === 'payment.succeeded') {
-                $customer = $payload['customer'] ?? [];
-
-                Payment::updateOrCreate(
-                    ['payment_id' => $payload['payment_id']],
-                    [
-                        'user_id' => UserAccount::where('email_address', $customer['email'] ?? null)->value('user_id'),
-                        'subscription_id' => $payload['subscription_id'] ?? null,
-                        'business_id' => $payload['business_id'] ?? null,
-                        'status' => $payload['status'] ?? null,
-                        'total_amount' => $payload['total_amount'] ?? null,
-                        'currency' => $payload['currency'] ?? null,
-                        'payment_method' => $payload['payment_method'] ?? null,
-                        'card_last_four' => $payload['card_last_four'] ?? null,
-                        'card_type' => $payload['card_type'] ?? null,
-                        'card_network' => $payload['card_network'] ?? null,
-                        'customer_id' => $customer['customer_id'] ?? null,
-                        'customer_name' => $customer['name'] ?? null,
-                        'customer_email' => $customer['email'] ?? null,
-                        'raw_payload' => json_encode($payload), // ensure JSON storage
-                    ]
-                );
-
-                Log::info('Payment succeeded and saved', $payload);
-            }
-        }
-
-        DB::commit();
-
-        return response()->json(['status' => 'ok']);
-    } catch (\Throwable $e) {
-        DB::rollBack();
-        Log::error('Webhook handling failed', [
-            'error' => $e->getMessage(),
-            'trace' => $e->getTraceAsString(),
-            'payload' => $payload,
-        ]);
-
-        return response()->json(['status' => 'error', 'message' => $e->getMessage()], 500);
-    }
-}
 
 }
 
+// public function handle(Request $request)
+// {
+//     $data = $request->all();
+//     Log::info('Dodo webhook received', $data);
+
+//     $payload = $data['data'] ?? [];
+
+//     DB::beginTransaction();
+
+//     try {
+//         // === Subscription events ===
+//         if (($payload['payload_type'] ?? null) === 'Subscription') {
+//             switch ($data['type']) {
+//                 case 'subscription.active':
+//                 case 'subscription.renewed':
+//                     Subscription::updateOrCreate(
+//                         ['subscription_id' => $payload['subscription_id']],
+//                         [
+//                             'user_id' => UserAccount::where('email_address', $payload['customer']['email'] ?? null)->value('user_id'),
+//                             'status' => $payload['status'] ?? 'active',
+//                             'product_id' => $payload['product_id'] ?? null,
+//                             'currency' => $payload['currency'] ?? null,
+//                             'amount' => $payload['recurring_pre_tax_amount'] ?? null,
+//                             'payment_frequency_count' => $payload['payment_frequency_count'] ?? null,
+//                             'payment_frequency_interval' => $payload['payment_frequency_interval'] ?? null,
+//                             'subscription_period_count' => $payload['subscription_period_count'] ?? null,
+//                             'subscription_period_interval' => $payload['subscription_period_interval'] ?? null,
+//                             'next_billing_date' => $payload['next_billing_date'] ?? null,
+//                             'previous_billing_date' => $payload['previous_billing_date'] ?? null,
+//                             'expires_at' => $payload['expires_at'] ?? null,
+//                             'raw_payload' => json_encode($payload), // ensure JSON storage
+//                         ]
+//                     );
+//                     Log::info('Subscription saved', $payload);
+//                     break;
+
+//                 case 'subscription.cancelled':
+//                     Subscription::where('subscription_id', $payload['subscription_id'])
+//                         ->update([
+//                             'status' => 'cancelled',
+//                             'raw_payload' => json_encode($payload),
+//                         ]);
+//                     Log::info('Subscription cancelled', $payload);
+//                     break;
+//             }
+//         }
+
+//         // === Payment events ===
+//         if (($payload['payload_type'] ?? null) === 'Payment') {
+//             if ($data['type'] === 'payment.succeeded') {
+//                 $customer = $payload['customer'] ?? [];
+
+//                 Payment::updateOrCreate(
+//                     ['payment_id' => $payload['payment_id']],
+//                     [
+//                         'user_id' => UserAccount::where('email_address', $customer['email'] ?? null)->value('user_id'),
+//                         'subscription_id' => $payload['subscription_id'] ?? null,
+//                         'business_id' => $payload['business_id'] ?? null,
+//                         'status' => $payload['status'] ?? null,
+//                         'total_amount' => $payload['total_amount'] ?? null,
+//                         'currency' => $payload['currency'] ?? null,
+//                         'payment_method' => $payload['payment_method'] ?? null,
+//                         'card_last_four' => $payload['card_last_four'] ?? null,
+//                         'card_type' => $payload['card_type'] ?? null,
+//                         'card_network' => $payload['card_network'] ?? null,
+//                         'customer_id' => $customer['customer_id'] ?? null,
+//                         'customer_name' => $customer['name'] ?? null,
+//                         'customer_email' => $customer['email'] ?? null,
+//                         'raw_payload' => json_encode($payload), // ensure JSON storage
+//                     ]
+//                 );
+
+//                 Log::info('Payment succeeded and saved', $payload);
+//             }
+//         }
+
+//         DB::commit();
+
+//         return response()->json(['status' => 'ok']);
+//     } catch (\Throwable $e) {
+//         DB::rollBack();
+//         Log::error('Webhook handling failed', [
+//             'error' => $e->getMessage(),
+//             'trace' => $e->getTraceAsString(),
+//             'payload' => $payload,
+//         ]);
+
+//         return response()->json(['status' => 'error', 'message' => $e->getMessage()], 500);
+//     }
+// }
 

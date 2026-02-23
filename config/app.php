@@ -57,7 +57,7 @@ return [
     'jwt_expiration' => env('JWT_EXPIRATION', 7200),
     'frontend_url' => env('FRONTEND_URL', 'http://localhost:3000'),
     'forwarder_token' => env('LARAVEL_WEBHOOK_KEY'),
-  
+
 
 
     /*

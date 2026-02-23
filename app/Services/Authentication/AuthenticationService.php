@@ -1,6 +1,7 @@
 <?php
 
 namespace App\Services\Authentication;
+
 use App\Enums\OtpCodePurpose;
 use App\Models\OtpCode;
 use App\Models\UserAccount;
@@ -10,52 +11,60 @@ use Carbon\Carbon;
 use Exception;
 use Illuminate\Auth\AuthenticationException;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Facades\Cache;
-use App\Http\Middleware\DailySearchLimit;
 
 class AuthenticationService
 {
-         public function __construct()
+    protected $service;
+
+    public function __construct()
     {
         $this->service = new DodoPaymentService();
     }
-     public  function createAccount(array $data)
-    {
-        $data['password'] = Hash::make($data['password']);
 
-        $data['sign_up_type'] = "manual";
-        $dodoRegistration = $this->service->createCustomer($data);
+    public function createAccount(array $data)
+    {
+        $data['password']    = Hash::make($data['password']);
+        $data['sign_up_type'] = 'manual';
+
+        $dodoRegistration        = $this->service->createCustomer($data);
         $data['dodo_customer_id'] = $dodoRegistration['customer_id'];
-         $customer = UserAccount::create($data);
-        MessageService::createOTPCode($data['email_address'], OtpCodePurpose::ACCOUNT_CREATION->value);
-         return $customer;
-    }
-public static function loginUser(array $data)
-{
-    $userData = UserAccount::whereEmailAddress($data['email_address'])->first();
 
-    if (!$userData || !Hash::check($data['password'], $userData->password)) {
-        throw new AuthenticationException("Invalid Email or Password");
-    }
+        $customer = UserAccount::create($data);
 
-    if($userData->verify_status == false){
-        MessageService::createOTPCode($data['email_address'], OtpCodePurpose::ACCOUNT_CREATION->value);
-        return [
-            'user' => $userData,
-            'verified' => false
-        ];
+        // OTP is sent here — no need to send again in AuthController
+        MessageService::createOTPCode(
+            $data['email_address'],
+            OtpCodePurpose::ACCOUNT_CREATION->value
+        );
+
+        return $customer;
     }
 
-    DailySearchLimit::clearSearchLimit($request);
-
-        $token = $user->createToken('auth-token')->plainTextToken;
-    return $userData;
-}
-
-
-   public static function updateUserPassword(array $data): bool
+    public static function loginUser(array $data)
     {
-        return UserAccount::whereEmailAddress($data['email_address'])->update(['password' => Hash::make($data['password'])]);
+        $userData = UserAccount::whereEmailAddress($data['email_address'])->first();
+
+        if (!$userData || !Hash::check($data['password'], $userData->password)) {
+            throw new AuthenticationException("Invalid Email or Password");
+        }
+
+        // Not verified — send new OTP and throw so controller handles redirect
+        // if ($userData->verify_status == false) {
+        //     // MessageService::createOTPCode(
+        //     //     $data['email_address'],
+        //     //     OtpCodePurpose::ACCOUNT_CREATION->value
+        //     // );
+        //     throw new Exception("Account not verified. A new OTP has been sent to your email.");
+        // }
+
+        // Just return the user — Laravel session handles auth, no JWT needed
+        return $userData;
+    }
+
+    public static function updateUserPassword(array $data): bool
+    {
+        return (bool) UserAccount::whereEmailAddress($data['email_address'])
+            ->update(['password' => Hash::make($data['password'])]);
     }
 
     public static function validateOTP(array $data)
@@ -65,9 +74,11 @@ public static function loginUser(array $data)
         if (!$otpRecord) {
             throw new Exception('Invalid OTP code', 404);
         }
+
         if (Carbon::parse($otpRecord->expires_at)->isPast()) {
-            throw new Exception('OTP code has expired, kindly generate another OTP Code', 410);
+            throw new Exception('OTP code has expired, kindly generate another OTP code', 410);
         }
+
         return $otpRecord;
     }
 }

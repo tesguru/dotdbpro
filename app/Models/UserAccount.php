@@ -3,16 +3,17 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Foundation\Auth\User as Authenticatable; // 👈 change import
+use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Str;
 
-class UserAccount extends Model
+class UserAccount extends Authenticatable // 👈 change this
 {
-      use HasApiTokens, HasFactory, Notifiable, SoftDeletes;
-
+    use HasFactory, SoftDeletes, Notifiable; // 👈 add Notifiable
 
     protected $table = 'user_accounts';
+       protected $primaryKey = 'user_id';
 
     protected $fillable = [
         'user_id',
@@ -32,12 +33,9 @@ class UserAccount extends Model
 
     protected $casts = [
         'verify_status' => 'boolean',
-        'verify_date' => 'datetime'
+        'verify_date'   => 'datetime'
     ];
 
-    /**
-     * Boot the model
-     */
     protected static function boot()
     {
         parent::boot();
